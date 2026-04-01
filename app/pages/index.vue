@@ -11,15 +11,27 @@
 
       <div class="mx-0.5 h-5 w-px bg-slate-200 mobile-landscape:mx-0 mobile-landscape:my-0.5 mobile-landscape:h-px mobile-landscape:w-5 dark:bg-slate-600" />
 
-      <ToolbarActions
+      <ToolbarBrushEffects
         :is-rainbow="isRainbow"
         :is-blink="isBlink"
-        :is-eraser="isEraser"
         @toggle-rainbow="toggleRainbow"
         @toggle-blink="toggleBlink"
+      />
+
+      <div class="mx-0.5 h-5 w-px bg-slate-200 mobile-landscape:mx-0 mobile-landscape:my-0.5 mobile-landscape:h-px mobile-landscape:w-5 dark:bg-slate-600" />
+
+      <ToolbarEditActions
+        :is-eraser="isEraser"
         @toggle-eraser="toggleEraser"
         @undo="canvasComponent?.undo()"
         @clear="clearWithWipe"
+      />
+
+      <div class="mx-0.5 h-5 w-px bg-slate-200 mobile-landscape:mx-0 mobile-landscape:my-0.5 mobile-landscape:h-px mobile-landscape:w-5 dark:bg-slate-600" />
+
+      <ToolbarExportActions
+        @save="saveDrawing"
+        @share="shareDrawing"
       />
 
       <div class="mx-0.5 h-5 w-px bg-slate-200 mobile-landscape:mx-0 mobile-landscape:my-0.5 mobile-landscape:h-px mobile-landscape:w-5 dark:bg-slate-600" />
@@ -83,6 +95,37 @@ const {
 
 function toggleColorMode() {
   colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
+}
+
+function getDrawingFile(): File | null {
+  const dataUrl = canvasComponent.value?.exportImage();
+  if (!dataUrl) return null;
+  const [header, base64] = dataUrl.split(",");
+  const mime = header?.match(/:(.*?);/)?.[1] ?? "image/jpeg";
+  const bytes = atob(base64!);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new File([arr], "regenbogen.jpg", { type: mime });
+}
+
+async function saveDrawing() {
+  const file = getDrawingFile();
+  if (!file) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(file);
+  a.download = file.name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function shareDrawing() {
+  const file = getDrawingFile();
+  if (!file) return;
+  if (navigator.share && navigator.canShare?.({ files: [file] })) {
+    await navigator.share({ title: "Regenbogen", files: [file] });
+  } else {
+    await saveDrawing();
+  }
 }
 
 function clearWithWipe() {
