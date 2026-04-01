@@ -2,7 +2,7 @@ export function useDrawingCanvas() {
   const canvasRef = ref<HTMLCanvasElement | null>(null);
   const isDrawing = ref(false);
   const brushColor = ref("#39ff14");
-  const brushSize = ref(24);
+  const brushSize = ref(36);
   const history = ref<ImageData[]>([]);
   const maxHistory = 30;
   const strokePoints = ref<Array<{ x: number; y: number }>>([]);

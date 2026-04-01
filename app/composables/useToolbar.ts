@@ -35,8 +35,8 @@ const neonColors = [
 
 export const brushSizes = [
   { label: "S", value: 12 },
-  { label: "M", value: 24 },
-  { label: "L", value: 48 },
+  { label: "M", value: 36 },
+  { label: "L", value: 120 },
 ];
 
 export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
@@ -44,7 +44,7 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
   const colors = computed(() => (isNeon.value ? neonColors : normalColors));
 
   const selectedColor = ref("#39ff14");
-  const selectedSize = ref(24);
+  const selectedSize = ref(36);
   const isEraser = ref(false);
   const isBlink = ref(false);
   const isRainbow = ref(false);
@@ -104,6 +104,7 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
       isEraser.value = false;
       if (canvasComponent.value) {
         canvasComponent.value.brushColor = previousColor.value;
+        canvasComponent.value.neonGlow = isNeon.value;
         selectedColor.value = previousColor.value;
       }
     }
@@ -139,6 +140,7 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
       if (canvasComponent.value) {
         previousColor.value = selectedColor.value;
         canvasComponent.value.brushColor = eraserColor.value;
+        canvasComponent.value.neonGlow = false;
       }
     } else {
       disableEraser();
