@@ -64,6 +64,7 @@
       :is-neon="isNeon"
       :is-eraser="isEraser"
       @select="setColor"
+      @custom="setColor"
       @toggle-neon="toggleNeon"
     />
   </footer>
