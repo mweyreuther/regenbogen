@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-center gap-1.5 mobile-landscape:flex-col">
     <button
-      class="flex size-6 items-center justify-center rounded-full border-2 transition-transform sm:size-7"
+      class="flex size-7 items-center justify-center rounded-full border-2 transition-transform sm:size-8"
       :class="
         isNeon
           ? 'border-slate-700 bg-slate-900 dark:border-white'
@@ -18,7 +18,7 @@
     <button
       v-for="color in colors"
       :key="color"
-      class="size-6 rounded-full border-2 transition-all sm:size-7"
+      class="size-7 rounded-full border-2 transition-all sm:size-8"
       :class="
         selectedColor === color && !isEraser
           ? 'scale-110 border-slate-700 dark:border-white'
@@ -32,7 +32,7 @@
     />
     <button
       ref="triggerRef"
-      class="flex size-6 items-center justify-center rounded-full border-2 border-slate-300 bg-linear-to-br from-red-400 via-green-400 to-blue-400 transition-all sm:size-7 dark:border-slate-500"
+      class="flex size-7 items-center justify-center rounded-full border-2 border-slate-300 bg-linear-to-br from-red-400 via-green-400 to-blue-400 transition-all sm:size-8 dark:border-slate-500"
       @click="pickerOpen = !pickerOpen"
     >
       <UIcon
