@@ -16,6 +16,11 @@ export default defineNuxtConfig({
         { name: "apple-mobile-web-app-status-bar-style", content: "default" },
         { name: "apple-mobile-web-app-title", content: "Regenbogen" },
         { name: "theme-color", content: "#1e293b" },
+        {
+          name: "viewport",
+          content:
+            "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+        },
       ],
       link: [
         { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },

@@ -6,3 +6,12 @@
 }
 
 @custom-variant mobile-landscape (@media (orientation: landscape) and (max-height: 500px));
+
+html,
+body {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
