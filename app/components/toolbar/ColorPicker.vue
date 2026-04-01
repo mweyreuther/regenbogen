@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-1.5">
+  <div class="flex items-center gap-1.5 mobile-landscape:flex-col">
     <button
       class="flex size-6 items-center justify-center rounded-full border-2 transition-transform sm:size-7"
       :class="

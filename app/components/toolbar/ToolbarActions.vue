@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-1.5">
+  <div class="flex items-center gap-1.5 mobile-landscape:flex-col">
     <UButton
       :variant="isRainbow ? 'solid' : 'ghost'"
       :color="isRainbow ? 'primary' : 'neutral'"
@@ -15,7 +15,7 @@
       @click="$emit('toggle-blink')"
     />
 
-    <div class="mx-0.5 h-5 w-px bg-slate-200 dark:bg-slate-600" />
+    <div class="mx-0.5 h-5 w-px bg-slate-200 mobile-landscape:mx-0 mobile-landscape:my-0.5 mobile-landscape:h-px mobile-landscape:w-5 dark:bg-slate-600" />
 
     <UButton
       :variant="isEraser ? 'solid' : 'ghost'"

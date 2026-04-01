@@ -40,10 +40,10 @@ export const brushSizes = [
 ];
 
 export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
-  const isNeon = ref(false);
+  const isNeon = ref(true);
   const colors = computed(() => (isNeon.value ? neonColors : normalColors));
 
-  const selectedColor = ref("#22c55e");
+  const selectedColor = ref("#39ff14");
   const selectedSize = ref(24);
   const isEraser = ref(false);
   const isBlink = ref(false);

@@ -1,13 +1,13 @@
 export function useDrawingCanvas() {
   const canvasRef = ref<HTMLCanvasElement | null>(null);
   const isDrawing = ref(false);
-  const brushColor = ref("#22c55e");
+  const brushColor = ref("#39ff14");
   const brushSize = ref(24);
   const history = ref<ImageData[]>([]);
   const maxHistory = 30;
   const strokePoints = ref<Array<{ x: number; y: number }>>([]);
   const rainbowMode = ref(false);
-  const neonGlow = ref(false);
+  const neonGlow = ref(true);
   let rainbowHue = 0;
   let lastPos: { x: number; y: number } | null = null;
 
