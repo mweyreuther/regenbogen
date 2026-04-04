@@ -16,7 +16,7 @@
     />
     <UButton
       variant="ghost"
-      color="neutral"
+      color="error"
       icon="i-lucide-trash-2"
       size="xs"
       @click="$emit('clear')"
