@@ -43,7 +43,7 @@
 
     <Teleport to="body">
       <div
-        v-if="pickerOpen"
+        v-show="pickerOpen"
         class="fixed inset-0 z-50"
         @click.self="pickerOpen = false"
       >
@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   colors: string[];
   selectedColor: string;
   isNeon: boolean;

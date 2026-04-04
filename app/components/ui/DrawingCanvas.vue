@@ -71,14 +71,6 @@ function getOverlayPos(e: MouseEvent | TouchEvent): { x: number; y: number } | n
   };
 }
 
-function mergeOverlay() {
-  const mainCtx = canvasRef.value?.getContext("2d");
-  const overlay = overlayRef.value;
-  if (!mainCtx || !overlay) return;
-  mainCtx.drawImage(overlay, 0, 0);
-  clearOverlay();
-}
-
 function clearOverlay() {
   const ctx = getOverlayCtx();
   const canvas = overlayRef.value;
