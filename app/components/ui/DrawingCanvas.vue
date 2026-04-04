@@ -7,8 +7,8 @@
       @mousemove="onMove"
       @mouseup="onEnd"
       @mouseleave="onEnd"
-      @touchstart.prevent="onStart"
-      @touchmove.prevent="onMove"
+      @touchstart="onStart"
+      @touchmove="onMove"
       @touchend="onEnd"
     />
     <canvas
@@ -34,6 +34,7 @@ const {
   brushSize,
   rainbowMode,
   neonGlow,
+  invalidateCache,
 } = useDrawingCanvas();
 
 const emit = defineEmits<{
@@ -84,7 +85,12 @@ function clearOverlay() {
 let overlayLastPos: { x: number; y: number } | null = null;
 let overlayRainbowHue = 0;
 
+function preventTouch(e: Event) {
+  if (e.cancelable) e.preventDefault();
+}
+
 function onStart(e: MouseEvent | TouchEvent) {
+  preventTouch(e);
   if (blinkMode.value) {
     const ctx = getOverlayCtx();
     const pos = getOverlayPos(e);
@@ -107,6 +113,7 @@ function onStart(e: MouseEvent | TouchEvent) {
 }
 
 function onMove(e: MouseEvent | TouchEvent) {
+  preventTouch(e);
   if (blinkMode.value && isOverlayDrawing.value) {
     const ctx = getOverlayCtx();
     const pos = getOverlayPos(e);
@@ -172,6 +179,7 @@ onMounted(() => {
     const h = Math.round(rect.height * dpr);
     canvas.width = w;
     canvas.height = h;
+    invalidateCache();
     if (overlay) {
       overlay.width = w;
       overlay.height = h;

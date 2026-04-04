@@ -61,7 +61,7 @@
     </template>
   </UPopover>
 
-  <UModal v-model:open="aboutOpen">
+  <UModal v-model:open="aboutOpen" title="Info" description="Über Regenbogen">
     <template #content>
       <div
         class="relative flex flex-col items-center gap-4 px-6 py-8 text-center"
@@ -76,7 +76,7 @@
           name="i-lucide-rainbow"
           class="size-12 text-slate-600 dark:text-slate-200"
         />
-        <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100">
+        <h2 class="-mt-4 text-2xl font-bold text-slate-800 dark:text-slate-100">
           Regenbogen
         </h2>
         <p
@@ -87,21 +87,17 @@
         </p>
         <p class="text-xl text-slate-800 dark:text-slate-100">Wilma & Alva</p>
         <p class="text-3xl">
-          <span class="inline-block animate-bounce">&#10084;&#65039;</span>
+          <span ref="heartRef" class="inline-block">&#10084;&#65039;</span>
         </p>
-        <UButton
-          variant="ghost"
-          color="neutral"
-          label="Schliessen"
-          size="sm"
-          @click="aboutOpen = false"
-        />
+        <p class="text-xs text-slate-300 dark:text-slate-600">bis zum Mond und zurück</p>
       </div>
     </template>
   </UModal>
 </template>
 
 <script setup lang="ts">
+import { animate } from "animejs";
+
 defineEmits<{
   save: [];
   share: [];
@@ -109,6 +105,25 @@ defineEmits<{
 
 const menuOpen = ref(false);
 const aboutOpen = ref(false);
+const heartRef = ref<HTMLElement | null>(null);
+
+watch(aboutOpen, (open) => {
+  if (!open) return;
+  const tryAnimate = () => {
+    if (!heartRef.value) {
+      requestAnimationFrame(tryAnimate);
+      return;
+    }
+    animate(heartRef.value, {
+      rotate: [0, -15, 15, -15, 15, 0],
+      scale: [1, 1.2, 1, 1.2, 1, 1],
+      duration: 2000,
+      ease: "easeInOutSine",
+      loop: true,
+    });
+  };
+  requestAnimationFrame(tryAnimate);
+});
 const colorMode = useColorMode();
 
 function toggleColorMode() {

@@ -10,15 +10,29 @@ export function useDrawingCanvas() {
   const neonGlow = ref(true);
   let rainbowHue = 0;
   let lastPos: { x: number; y: number } | null = null;
+  let cachedCtx: CanvasRenderingContext2D | null = null;
+  let cachedRect: DOMRect | null = null;
 
   function getCtx() {
-    return canvasRef.value?.getContext("2d") ?? null;
+    if (cachedCtx) return cachedCtx;
+    cachedCtx =
+      canvasRef.value?.getContext("2d", { willReadFrequently: true }) ?? null;
+    return cachedCtx;
   }
 
-  function getPos(e: MouseEvent | TouchEvent): { x: number; y: number } | null {
+  function invalidateCache() {
+    cachedCtx = null;
+    cachedRect = null;
+    history.value = [];
+  }
+
+  function getPos(
+    e: MouseEvent | TouchEvent,
+  ): { x: number; y: number } | null {
     const canvas = canvasRef.value;
     if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
+    if (!cachedRect) cachedRect = canvas.getBoundingClientRect();
+    const rect = cachedRect;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
@@ -92,7 +106,10 @@ export function useDrawingCanvas() {
         ctx.lineWidth = brushSize.value;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-        applyGlow(ctx, color);
+        if (neonGlow.value) {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 18;
+        }
         ctx.stroke();
         rainbowHue = (rainbowHue + 4) % 360;
       }
@@ -191,5 +208,6 @@ export function useDrawingCanvas() {
     clearStrokePoints,
     rainbowMode,
     neonGlow,
+    invalidateCache,
   };
 }
