@@ -113,7 +113,8 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
   function toggleRainbow() {
     disableEraser();
     isRainbow.value = !isRainbow.value;
-    if (canvasComponent.value) canvasComponent.value.rainbowMode = isRainbow.value;
+    if (canvasComponent.value)
+      canvasComponent.value.rainbowMode = isRainbow.value;
   }
 
   function toggleBlink() {

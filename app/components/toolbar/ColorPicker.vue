@@ -12,7 +12,9 @@
       <UIcon
         name="i-lucide-zap"
         class="size-3.5 sm:size-4"
-        :class="isNeon ? 'text-yellow-300' : 'text-slate-400 dark:text-slate-400'"
+        :class="
+          isNeon ? 'text-yellow-300' : 'text-slate-400 dark:text-slate-400'
+        "
       />
     </button>
     <button
@@ -104,7 +106,10 @@ watch(pickerOpen, (open) => {
 
     let left = rect.left + rect.width / 2;
     const panelW = panel?.offsetWidth ?? 200;
-    left = Math.max(panelW / 2 + gap, Math.min(left, window.innerWidth - panelW / 2 - gap));
+    left = Math.max(
+      panelW / 2 + gap,
+      Math.min(left, window.innerWidth - panelW / 2 - gap),
+    );
 
     panelStyle.value = {
       top: `${top}px`,

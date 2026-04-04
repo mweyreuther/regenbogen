@@ -1,5 +1,7 @@
 <template>
-  <div class="flex min-h-0 flex-1 flex-col mobile-landscape:flex-row bg-white dark:bg-slate-800">
+  <div
+    class="flex min-h-0 flex-1 flex-col mobile-landscape:flex-row bg-white dark:bg-slate-800"
+  >
     <AppHeader
       :sizes="brushSizes"
       :selected-size="selectedSize"

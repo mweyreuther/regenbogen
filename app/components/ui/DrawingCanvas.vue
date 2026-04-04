@@ -50,7 +50,9 @@ function getOverlayCtx() {
   return overlayRef.value?.getContext("2d") ?? null;
 }
 
-function getOverlayPos(e: MouseEvent | TouchEvent): { x: number; y: number } | null {
+function getOverlayPos(
+  e: MouseEvent | TouchEvent,
+): { x: number; y: number } | null {
   const canvas = overlayRef.value;
   if (!canvas) return null;
   const rect = canvas.getBoundingClientRect();
