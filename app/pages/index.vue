@@ -1,67 +1,35 @@
 <template>
   <div
-    class="flex min-h-0 flex-1 flex-col mobile-landscape:flex-row bg-white dark:bg-slate-800"
+    class="relative h-full w-full overflow-hidden bg-white dark:bg-slate-800"
   >
-    <AppHeader
-      :sizes="brushSizes"
-      :selected-size="selectedSize"
-      :is-rainbow="isRainbow"
-      :is-blink="isBlink"
-      :is-eraser="isEraser"
-      @save="saveDrawing"
-      @share="shareDrawing"
-      @select-size="setSize"
-      @toggle-rainbow="toggleRainbow"
-      @toggle-blink="toggleBlink"
-      @toggle-eraser="toggleEraser"
-      @undo="canvasComponent?.undo()"
-      @clear="clearWithWipe"
+    <UiDrawingCanvas ref="canvasComponent" />
+
+    <!-- Clear wipe overlay -->
+    <div
+      ref="wipeRef"
+      class="pointer-events-none absolute inset-0 z-10 origin-left scale-x-0 bg-white dark:bg-slate-800"
     />
 
-    <div class="relative min-h-0 flex-1 overflow-hidden">
-      <UiDrawingCanvas ref="canvasComponent" />
-
-      <!-- Clear wipe overlay -->
-      <div
-        ref="wipeRef"
-        class="pointer-events-none absolute inset-0 z-30 origin-left scale-x-0 bg-white dark:bg-slate-800"
-      />
-    </div>
-
-    <AppFooter
-      :colors="colors"
-      :selected-color="selectedColor"
-      :is-neon="isNeon"
-      :is-eraser="isEraser"
-      @select="setColor"
-      @custom="setColor"
-      @toggle-neon="toggleNeon"
-    />
+    <ToolbarBottomToolbar />
+    <UiRotateNotice />
   </div>
 </template>
 
 <script setup lang="ts">
 import { animate } from "animejs";
-import { brushSizes, type CanvasRef } from "~/composables/useToolbar";
+import {
+  toolbarKey,
+  type CanvasRef,
+  type ToolbarContext,
+} from "~/composables/useToolbar";
+
+// Dark mode only: force it for this page regardless of any stored preference.
+definePageMeta({ colorMode: "dark" });
 
 const canvasComponent = ref<CanvasRef | null>(null);
 const wipeRef = ref<HTMLElement | null>(null);
 
-const {
-  isNeon,
-  colors,
-  selectedColor,
-  selectedSize,
-  isEraser,
-  isBlink,
-  isRainbow,
-  toggleNeon,
-  setColor,
-  setSize,
-  toggleRainbow,
-  toggleBlink,
-  toggleEraser,
-} = useToolbar(canvasComponent);
+const toolbar = useToolbar(canvasComponent);
 
 function getDrawingFile(): File | null {
   const dataUrl = canvasComponent.value?.exportImage();
@@ -117,4 +85,17 @@ function clearWithWipe() {
     },
   });
 }
+
+const toolbarContext: ToolbarContext = {
+  ...toolbar,
+  undo: () => canvasComponent.value?.undo(),
+  redo: () => canvasComponent.value?.redo(),
+  clear: clearWithWipe,
+  fillBackground: (kind) => canvasComponent.value?.fillBackground(kind),
+  save: saveDrawing,
+  share: shareDrawing,
+  reload: () => window.location.reload(),
+};
+
+provide(toolbarKey, toolbarContext);
 </script>

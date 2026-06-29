@@ -4,6 +4,7 @@ export function useDrawingCanvas() {
   const brushColor = ref("#39ff14");
   const brushSize = ref(36);
   const history = ref<ImageData[]>([]);
+  const redoStack = ref<ImageData[]>([]);
   const maxHistory = 30;
   const strokePoints = ref<Array<{ x: number; y: number }>>([]);
   const rainbowMode = ref(false);
@@ -24,11 +25,10 @@ export function useDrawingCanvas() {
     cachedCtx = null;
     cachedRect = null;
     history.value = [];
+    redoStack.value = [];
   }
 
-  function getPos(
-    e: MouseEvent | TouchEvent,
-  ): { x: number; y: number } | null {
+  function getPos(e: MouseEvent | TouchEvent): { x: number; y: number } | null {
     const canvas = canvasRef.value;
     if (!canvas) return null;
     if (!cachedRect) cachedRect = canvas.getBoundingClientRect();
@@ -58,6 +58,8 @@ export function useDrawingCanvas() {
       history.value.shift();
     }
     history.value.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    // A fresh action invalidates anything that was undone.
+    redoStack.value = [];
   }
 
   function applyGlow(ctx: CanvasRenderingContext2D, color: string) {
@@ -141,8 +143,21 @@ export function useDrawingCanvas() {
     const ctx = getCtx();
     const canvas = canvasRef.value;
     if (!ctx || !canvas || history.value.length === 0) return;
+    redoStack.value.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
     const prev = history.value.pop()!;
     ctx.putImageData(prev, 0, 0);
+  }
+
+  function redo() {
+    const ctx = getCtx();
+    const canvas = canvasRef.value;
+    if (!ctx || !canvas || redoStack.value.length === 0) return;
+    if (history.value.length >= maxHistory) {
+      history.value.shift();
+    }
+    history.value.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    const next = redoStack.value.pop()!;
+    ctx.putImageData(next, 0, 0);
   }
 
   function clear() {
@@ -151,6 +166,66 @@ export function useDrawingCanvas() {
     if (!ctx || !canvas) return;
     saveToHistory();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function fillBackground(kind: "pattern" | "gradient" | "rainbow") {
+    const ctx = getCtx();
+    const canvas = canvasRef.value;
+    if (!ctx || !canvas) return;
+    saveToHistory();
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Compose the fill on an offscreen canvas, then paint it behind the
+    // existing drawing with destination-over so strokes stay on top.
+    const off = document.createElement("canvas");
+    off.width = w;
+    off.height = h;
+    const octx = off.getContext("2d");
+    if (!octx) return;
+
+    if (kind === "gradient") {
+      const hueA = Math.random() * 360;
+      const hueB = (hueA + 90 + Math.random() * 180) % 360;
+      const g = octx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, `hsl(${hueA}, 85%, 62%)`);
+      g.addColorStop(1, `hsl(${hueB}, 85%, 62%)`);
+      octx.fillStyle = g;
+      octx.fillRect(0, 0, w, h);
+    } else if (kind === "pattern") {
+      const baseHue = Math.random() * 360;
+      octx.fillStyle = `hsl(${baseHue}, 70%, 88%)`;
+      octx.fillRect(0, 0, w, h);
+      octx.fillStyle = `hsl(${(baseHue + 180) % 360}, 70%, 58%)`;
+      const step = Math.max(40, Math.round(w / 7));
+      const r = step * 0.18;
+      for (let y = step / 2; y < h; y += step) {
+        for (let x = step / 2; x < w; x += step) {
+          octx.beginPath();
+          octx.arc(x, y, r, 0, Math.PI * 2);
+          octx.fill();
+        }
+      }
+    } else {
+      // Random rainbow patchwork.
+      const cols = 6;
+      const rows = Math.max(1, Math.round((cols * h) / w));
+      const cw = w / cols;
+      const ch = h / rows;
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          octx.fillStyle = `hsl(${Math.random() * 360}, 85%, 60%)`;
+          octx.fillRect(i * cw, j * ch, cw + 1, ch + 1);
+        }
+      }
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-over";
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.drawImage(off, 0, 0);
+    ctx.restore();
   }
 
   function exportImage(): string {
@@ -201,7 +276,9 @@ export function useDrawingCanvas() {
     continueStrokeWithTracking,
     endStroke,
     undo,
+    redo,
     clear,
+    fillBackground,
     exportImage,
     setBackground,
     strokePoints,

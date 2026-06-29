@@ -27,7 +27,9 @@ const {
   continueStroke,
   endStroke,
   undo,
+  redo,
   clear,
+  fillBackground,
   exportImage,
   setBackground,
   brushColor,
@@ -165,27 +167,67 @@ function undoAll() {
   }
 }
 
-// Resize canvas resolution to match displayed size
+// Resize canvas resolution to match displayed size.
+// Setting canvas.width/height clears the bitmap, so we snapshot the current
+// pixels, resize, then redraw them (scaled) — otherwise a resize such as an
+// orientation flip or browser-chrome change blanks the drawing.
 let resizeObserver: ResizeObserver | null = null;
 
-onMounted(() => {
-  resizeObserver = new ResizeObserver(() => {
-    const canvas = canvasRef.value;
-    const overlay = overlayRef.value;
-    if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.round(rect.width * dpr);
-    const h = Math.round(rect.height * dpr);
-    canvas.width = w;
-    canvas.height = h;
-    invalidateCache();
-    if (overlay) {
-      overlay.width = w;
-      overlay.height = h;
+function snapshot(source: HTMLCanvasElement): HTMLCanvasElement | null {
+  if (source.width === 0 || source.height === 0) return null;
+  const copy = document.createElement("canvas");
+  copy.width = source.width;
+  copy.height = source.height;
+  copy.getContext("2d")?.drawImage(source, 0, 0);
+  return copy;
+}
+
+function fitCanvas() {
+  const canvas = canvasRef.value;
+  const overlay = overlayRef.value;
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.round(rect.width * dpr);
+  const h = Math.round(rect.height * dpr);
+  if (w === 0 || h === 0) return;
+  if (canvas.width === w && canvas.height === h) return;
+
+  const mainSnap = snapshot(canvas);
+  const overlaySnap = overlay ? snapshot(overlay) : null;
+
+  canvas.width = w;
+  canvas.height = h;
+  invalidateCache();
+  if (mainSnap) {
+    canvas
+      .getContext("2d", { willReadFrequently: true })
+      ?.drawImage(mainSnap, 0, 0, mainSnap.width, mainSnap.height, 0, 0, w, h);
+  }
+
+  if (overlay) {
+    overlay.width = w;
+    overlay.height = h;
+    if (overlaySnap) {
+      getOverlayCtx()?.drawImage(
+        overlaySnap,
+        0,
+        0,
+        overlaySnap.width,
+        overlaySnap.height,
+        0,
+        0,
+        w,
+        h,
+      );
     }
-    emit("resize");
-  });
+  }
+
+  emit("resize");
+}
+
+onMounted(() => {
+  resizeObserver = new ResizeObserver(() => fitCanvas());
   if (canvasRef.value) {
     resizeObserver.observe(canvasRef.value);
   }
@@ -197,7 +239,9 @@ onBeforeUnmount(() => {
 
 defineExpose({
   undo: undoAll,
+  redo,
   clear: clearAll,
+  fillBackground,
   exportImage,
   setBackground,
   brushColor,

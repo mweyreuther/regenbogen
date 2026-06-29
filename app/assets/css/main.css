@@ -5,8 +5,6 @@
   --font-sans: "Sour Gummy", "Nunito", "Public Sans", sans-serif;
 }
 
-@custom-variant mobile-landscape (@media (orientation: landscape) and (max-height: 500px));
-
 html,
 body {
   touch-action: manipulation;

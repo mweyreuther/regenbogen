@@ -1,8 +1,11 @@
 import { animate } from "animejs";
+import type { ComputedRef, InjectionKey, Ref } from "vue";
 
 export type CanvasRef = {
   undo: () => void;
+  redo: () => void;
   clear: () => void;
+  fillBackground: (kind: "pattern" | "gradient" | "rainbow") => void;
   exportImage: () => string | null;
   brushColor: string;
   brushSize: number;
@@ -12,32 +15,86 @@ export type CanvasRef = {
   neonGlow: boolean;
 };
 
+// Index 0 is white in both palettes so the neon toggle never flips it away.
+// The remaining entries are hue-aligned between the two palettes.
 const normalColors = [
-  "#000000",
+  "#ffffff",
   "#ef4444",
   "#f97316",
+  "#f59e0b",
   "#eab308",
+  "#84cc16",
   "#22c55e",
+  "#10b981",
+  "#14b8a6",
+  "#06b6d4",
   "#3b82f6",
-  "#a78bfa",
+  "#6366f1",
+  "#a855f7",
+  "#d946ef",
   "#ec4899",
 ];
 const neonColors = [
   "#ffffff",
   "#ff073a",
   "#ff6600",
-  "#ffff00",
+  "#ff9500",
+  "#ffe600",
+  "#ccff00",
   "#39ff14",
+  "#00ff9f",
+  "#00ffcc",
   "#00ffff",
+  "#00b3ff",
+  "#4d6bff",
   "#bf00ff",
-  "#ff69b4",
+  "#e600ff",
+  "#ff4fd8",
 ];
 
 export const brushSizes = [
   { label: "S", value: 12 },
   { label: "M", value: 36 },
   { label: "L", value: 120 },
+  { label: "XL", value: 240 },
 ];
+
+/**
+ * Shape of the toolbar state shared with the bottom toolbar and its panels via
+ * provide/inject, so panels don't need deep prop-drilling. Built in index.vue
+ * from useToolbar() plus the canvas-bound actions (undo/clear/save/share/reload).
+ */
+export interface ToolbarContext {
+  isNeon: Ref<boolean>;
+  colors: ComputedRef<string[]>;
+  selectedColor: Ref<string>;
+  selectedSize: Ref<number>;
+  isEraser: Ref<boolean>;
+  isBlink: Ref<boolean>;
+  isRainbow: Ref<boolean>;
+  eraserColor: ComputedRef<string>;
+  toggleNeon: () => void;
+  setColor: (color: string, event?: MouseEvent) => void;
+  setSize: (size: number) => void;
+  toggleRainbow: () => void;
+  toggleBlink: () => void;
+  toggleEraser: () => void;
+  undo: () => void;
+  redo: () => void;
+  clear: () => void;
+  fillBackground: (kind: "pattern" | "gradient" | "rainbow") => void;
+  save: () => void | Promise<void>;
+  share: () => void | Promise<void>;
+  reload: () => void;
+}
+
+export const toolbarKey: InjectionKey<ToolbarContext> = Symbol("toolbar");
+
+export function injectToolbar(): ToolbarContext {
+  const ctx = inject(toolbarKey);
+  if (!ctx) throw new Error("Toolbar context not provided");
+  return ctx;
+}
 
 export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
   const isNeon = ref(true);
@@ -79,6 +136,8 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
     selectedColor.value = color;
     if (canvasComponent.value) {
       canvasComponent.value.brushColor = color;
+      // Restore glow to match neon mode (it gets switched off while erasing).
+      canvasComponent.value.neonGlow = isNeon.value;
     }
     if (
       event?.currentTarget &&
@@ -156,6 +215,7 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
     isEraser,
     isBlink,
     isRainbow,
+    eraserColor,
     toggleNeon,
     setColor,
     setSize,
