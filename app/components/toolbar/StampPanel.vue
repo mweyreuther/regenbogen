@@ -48,17 +48,28 @@ const emit = defineEmits<{ "update:open": [boolean] }>();
 const { selectedStamp, setStamp } = injectToolbar();
 
 const stamps = [
+  // Herzen in allen Farben
+  "❤️",
+  "🧡",
+  "💛",
+  "💚",
+  "💙",
+  "🩵",
+  "💜",
+  "🩷",
+  "🤍",
+  "🩶",
+  // Sticker
   "⭐",
   "🌈",
-  "❤️",
-  "🐱",
-  "🐶",
   "🦄",
   "🌸",
   "🌟",
   "🍎",
   "🎈",
   "🦋",
+  "🐱",
+  "🐶",
   "🐠",
   "🌞",
   "🌙",
