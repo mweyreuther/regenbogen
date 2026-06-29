@@ -1,6 +1,7 @@
 <template>
   <!-- Always-visible quick undo / redo -->
   <div
+    v-if="!isUiHidden"
     class="absolute left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-20 flex gap-2"
   >
     <button
@@ -21,6 +22,7 @@
 
   <!-- Bottom bar -->
   <nav
+    v-if="!isUiHidden"
     class="absolute inset-x-0 bottom-0 z-20 flex gap-2 border-t border-slate-200/80 bg-white/85 px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur-md dark:border-slate-700/80 dark:bg-slate-800/85"
   >
     <button
@@ -56,6 +58,16 @@
     </button>
   </nav>
 
+  <!-- Fullscreen mode: the lone button that brings the UI back -->
+  <button
+    v-if="isUiHidden"
+    aria-label="Bedienung anzeigen"
+    class="absolute right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-20 flex size-11 items-center justify-center rounded-full bg-white/70 text-slate-600 shadow-md backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800"
+    @click="showUi()"
+  >
+    <UIcon name="i-lucide-eye" class="size-6" />
+  </button>
+
   <ToolbarColorPanel
     :open="activePanel === 'color'"
     @update:open="(v) => setOpen('color', v)"
@@ -75,7 +87,8 @@ import { injectToolbar } from "~/composables/useToolbar";
 
 type Panel = "color" | "size" | "more";
 
-const { selectedColor, selectedSize, undo, redo } = injectToolbar();
+const { selectedColor, selectedSize, undo, redo, isUiHidden, showUi } =
+  injectToolbar();
 
 const activePanel = ref<Panel | null>(null);
 

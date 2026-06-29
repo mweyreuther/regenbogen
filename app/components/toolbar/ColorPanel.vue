@@ -43,7 +43,7 @@
         </button>
 
         <!-- Effects -->
-        <div class="mb-4 grid grid-cols-2 gap-2.5">
+        <div class="mb-4 grid grid-cols-3 gap-2.5">
           <ToolbarPanelButton
             icon="i-lucide-rainbow"
             label="Regenbogen"
@@ -55,6 +55,12 @@
             label="Blinken"
             :active="isBlink"
             @click="toggleBlink()"
+          />
+          <ToolbarPanelButton
+            icon="i-lucide-spline"
+            label="Schlange"
+            :active="isSnake"
+            @click="toggleSnake()"
           />
         </div>
 
@@ -145,6 +151,8 @@ const {
   toggleRainbow,
   toggleBlink,
   toggleEraser,
+  toggleSnake,
+  isSnake,
   fillBackground,
 } = injectToolbar();
 

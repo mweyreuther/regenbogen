@@ -228,6 +228,55 @@ export function useDrawingCanvas() {
     ctx.restore();
   }
 
+  let snakeHue = 0;
+
+  function drawSnakeSegment(
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    width = 12,
+  ) {
+    const ctx = getCtx();
+    if (!ctx) return;
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.lineWidth = width;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (rainbowMode.value) {
+      const color = `hsl(${snakeHue}, 90%, 55%)`;
+      ctx.strokeStyle = color;
+      if (neonGlow.value) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 18;
+      } else {
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+      }
+      ctx.stroke();
+      snakeHue = (snakeHue + 4) % 360;
+    } else {
+      ctx.strokeStyle = brushColor.value;
+      applyGlow(ctx, brushColor.value);
+      ctx.stroke();
+    }
+  }
+
+  // One history snapshot per run, so a single undo removes the whole trail.
+  function beginSnakeRun() {
+    saveToHistory();
+  }
+
+  function endSnakeRun() {
+    const ctx = getCtx();
+    if (ctx) {
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+    }
+  }
+
   function exportImage(): string {
     const canvas = canvasRef.value;
     if (!canvas) return "";
@@ -279,6 +328,9 @@ export function useDrawingCanvas() {
     redo,
     clear,
     fillBackground,
+    drawSnakeSegment,
+    beginSnakeRun,
+    endSnakeRun,
     exportImage,
     setBackground,
     strokePoints,

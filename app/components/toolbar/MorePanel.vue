@@ -61,6 +61,11 @@
             label="Info"
             @click="openAbout()"
           />
+          <ToolbarPanelButton
+            icon="i-lucide-maximize"
+            label="Vollbild"
+            @click="runAndClose(hideUi)"
+          />
         </div>
       </div>
     </template>
@@ -110,7 +115,7 @@ import { injectToolbar } from "~/composables/useToolbar";
 defineProps<{ open: boolean }>();
 const emit = defineEmits<{ "update:open": [boolean] }>();
 
-const { undo, redo, clear, save, share, reload } = injectToolbar();
+const { undo, redo, clear, save, share, reload, hideUi } = injectToolbar();
 
 function runAndClose(action: () => void | Promise<void>) {
   emit("update:open", false);

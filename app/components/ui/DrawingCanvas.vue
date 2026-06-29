@@ -12,7 +12,7 @@
       @touchend="onEnd"
     />
     <canvas
-      v-show="hasBlinkStroke || isOverlayDrawing"
+      v-show="hasBlinkStroke || isOverlayDrawing || snakeActive"
       ref="overlayRef"
       class="pointer-events-none absolute inset-0 block h-full w-full"
       :class="{ 'animate-blink': hasBlinkStroke }"
@@ -30,6 +30,9 @@ const {
   redo,
   clear,
   fillBackground,
+  drawSnakeSegment,
+  beginSnakeRun,
+  endSnakeRun,
   exportImage,
   setBackground,
   brushColor,
@@ -41,6 +44,7 @@ const {
 
 const emit = defineEmits<{
   resize: [];
+  manualstart: [];
 }>();
 
 const wrapperRef = ref<HTMLElement | null>(null);
@@ -48,9 +52,34 @@ const overlayRef = ref<HTMLCanvasElement | null>(null);
 const blinkMode = ref(false);
 const hasBlinkStroke = ref(false);
 const isOverlayDrawing = ref(false);
+const snakeActive = ref(false);
 
 function getOverlayCtx() {
   return overlayRef.value?.getContext("2d") ?? null;
+}
+
+function setSnakeActive(active: boolean) {
+  snakeActive.value = active;
+}
+
+function drawSnakePointer(x: number, y: number, radius: number) {
+  const ctx = getOverlayCtx();
+  const canvas = overlayRef.value;
+  if (!ctx || !canvas) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#0f172a";
+  ctx.stroke();
+}
+
+function clearSnakeOverlay() {
+  const ctx = getOverlayCtx();
+  const canvas = overlayRef.value;
+  if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function getOverlayPos(
@@ -93,6 +122,7 @@ function preventTouch(e: Event) {
 
 function onStart(e: MouseEvent | TouchEvent) {
   preventTouch(e);
+  emit("manualstart");
   if (blinkMode.value) {
     const ctx = getOverlayCtx();
     const pos = getOverlayPos(e);
@@ -242,6 +272,12 @@ defineExpose({
   redo,
   clear: clearAll,
   fillBackground,
+  drawSnakeSegment,
+  beginSnakeRun,
+  endSnakeRun,
+  drawSnakePointer,
+  clearSnakeOverlay,
+  setSnakeActive,
   exportImage,
   setBackground,
   brushColor,

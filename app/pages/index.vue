@@ -2,7 +2,7 @@
   <div
     class="relative h-full w-full overflow-hidden bg-white dark:bg-slate-800"
   >
-    <UiDrawingCanvas ref="canvasComponent" />
+    <UiDrawingCanvas ref="canvasComponent" @manualstart="onManualStart" />
 
     <!-- Clear wipe overlay -->
     <div
@@ -30,6 +30,25 @@ const canvasComponent = ref<CanvasRef | null>(null);
 const wipeRef = ref<HTMLElement | null>(null);
 
 const toolbar = useToolbar(canvasComponent);
+const snake = useSnake(canvasComponent);
+
+function toggleSnake() {
+  // Snake and Blinken both own the overlay canvas; turn blink off on start.
+  if (!snake.isRunning.value && toolbar.isBlink.value) {
+    toolbar.isBlink.value = false;
+    canvasComponent.value?.setBlinkMode(false);
+  }
+  snake.toggle();
+}
+
+function onManualStart() {
+  snake.stop();
+}
+
+onBeforeUnmount(() => snake.stop());
+
+// Fullscreen / focus mode: hide all UI except a single restore button.
+const isUiHidden = ref(false);
 
 function getDrawingFile(): File | null {
   const dataUrl = canvasComponent.value?.exportImage();
@@ -88,6 +107,15 @@ function clearWithWipe() {
 
 const toolbarContext: ToolbarContext = {
   ...toolbar,
+  isSnake: snake.isRunning,
+  toggleSnake,
+  isUiHidden,
+  hideUi: () => {
+    isUiHidden.value = true;
+  },
+  showUi: () => {
+    isUiHidden.value = false;
+  },
   undo: () => canvasComponent.value?.undo(),
   redo: () => canvasComponent.value?.redo(),
   clear: clearWithWipe,

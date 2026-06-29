@@ -13,6 +13,19 @@ export type CanvasRef = {
   setBlinkMode: (enabled: boolean) => void;
   rainbowMode: boolean;
   neonGlow: boolean;
+  canvasRef: HTMLCanvasElement | null;
+  drawSnakeSegment: (
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    width?: number,
+  ) => void;
+  beginSnakeRun: () => void;
+  endSnakeRun: () => void;
+  drawSnakePointer: (x: number, y: number, radius: number) => void;
+  clearSnakeOverlay: () => void;
+  setSnakeActive: (active: boolean) => void;
 };
 
 // Index 0 is white in both palettes so the neon toggle never flips it away.
@@ -72,6 +85,7 @@ export interface ToolbarContext {
   isEraser: Ref<boolean>;
   isBlink: Ref<boolean>;
   isRainbow: Ref<boolean>;
+  isSnake: Ref<boolean>;
   eraserColor: ComputedRef<string>;
   toggleNeon: () => void;
   setColor: (color: string, event?: MouseEvent) => void;
@@ -79,6 +93,7 @@ export interface ToolbarContext {
   toggleRainbow: () => void;
   toggleBlink: () => void;
   toggleEraser: () => void;
+  toggleSnake: () => void;
   undo: () => void;
   redo: () => void;
   clear: () => void;
@@ -86,6 +101,9 @@ export interface ToolbarContext {
   save: () => void | Promise<void>;
   share: () => void | Promise<void>;
   reload: () => void;
+  isUiHidden: Ref<boolean>;
+  hideUi: () => void;
+  showUi: () => void;
 }
 
 export const toolbarKey: InjectionKey<ToolbarContext> = Symbol("toolbar");
