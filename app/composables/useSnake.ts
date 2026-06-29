@@ -4,8 +4,9 @@ import type { CanvasRef } from "~/composables/useToolbar";
 const SPEED_CSS = 180; // css px per second
 // A smoothly varying turn rate makes the path curve and deflect continuously
 // instead of running in long straight lines.
-const TURN_ACCEL = 9; // how fast the turn rate itself changes (rad/s^2)
-const MAX_TURN = 3.2; // cap on turn rate (rad/s) — higher = tighter curves
+const TURN_ACCEL = 6; // how fast the turn rate itself changes (rad/s^2)
+const TURN_DAMP = 2; // pulls the turn rate back toward straight (so it meanders, not circles)
+const MAX_TURN = 1.8; // cap on turn rate (rad/s) — higher = tighter curves
 
 /**
  * "Schlange" auto-draw mode: a pointer wanders the canvas at constant speed,
@@ -53,6 +54,7 @@ export function useSnake(canvasComponent: Ref<CanvasRef | null>) {
     // Wander the heading via a random-walking (capped) turn rate, then re-derive
     // velocity so speed stays constant. This yields smooth, curvy deflection.
     turnRate += (Math.random() - 0.5) * TURN_ACCEL * dt;
+    turnRate -= turnRate * TURN_DAMP * dt; // mean-revert toward straight
     if (turnRate > MAX_TURN) turnRate = MAX_TURN;
     else if (turnRate < -MAX_TURN) turnRate = -MAX_TURN;
     angle += turnRate * dt;
