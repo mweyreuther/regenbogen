@@ -1,8 +1,15 @@
 <template>
-  <div ref="wrapperRef" class="relative h-full w-full">
+  <div
+    ref="wrapperRef"
+    class="relative h-full w-full bg-white dark:bg-slate-800"
+  >
+    <canvas
+      ref="bgRef"
+      class="pointer-events-none absolute inset-0 block h-full w-full"
+    />
     <canvas
       ref="canvasRef"
-      class="absolute inset-0 block h-full w-full touch-none bg-white dark:bg-slate-800"
+      class="absolute inset-0 block h-full w-full touch-none"
       @mousedown="onStart"
       @mousemove="onMove"
       @mouseup="onEnd"
@@ -29,11 +36,10 @@ const {
   undo,
   redo,
   clear,
-  fillBackground,
   drawSnakeSegment,
   beginSnakeRun,
   endSnakeRun,
-  exportImage,
+  stamp,
   setBackground,
   brushColor,
   brushSize,
@@ -48,11 +54,40 @@ const emit = defineEmits<{
 }>();
 
 const wrapperRef = ref<HTMLElement | null>(null);
+const bgRef = ref<HTMLCanvasElement | null>(null);
 const overlayRef = ref<HTMLCanvasElement | null>(null);
 const blinkMode = ref(false);
 const hasBlinkStroke = ref(false);
 const isOverlayDrawing = ref(false);
 const snakeActive = ref(false);
+const stampEmoji = ref<string | null>(null);
+
+function setStamp(emoji: string | null) {
+  stampEmoji.value = emoji;
+}
+
+// Position relative to the main canvas (always visible, unlike the overlay).
+function getCanvasPos(
+  e: MouseEvent | TouchEvent,
+): { x: number; y: number } | null {
+  const canvas = canvasRef.value;
+  if (!canvas) return null;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  if ("touches" in e) {
+    const touch = e.touches[0];
+    if (!touch) return null;
+    return {
+      x: (touch.clientX - rect.left) * scaleX,
+      y: (touch.clientY - rect.top) * scaleY,
+    };
+  }
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY,
+  };
+}
 
 function getOverlayCtx() {
   return overlayRef.value?.getContext("2d") ?? null;
@@ -80,6 +115,89 @@ function clearSnakeOverlay() {
   const ctx = getOverlayCtx();
   const canvas = overlayRef.value;
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function getBgCtx() {
+  return bgRef.value?.getContext("2d") ?? null;
+}
+
+function renderFill(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  kind: "pattern" | "gradient" | "rainbow",
+) {
+  if (kind === "gradient") {
+    const hueA = Math.random() * 360;
+    const hueB = (hueA + 90 + Math.random() * 180) % 360;
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, `hsl(${hueA}, 85%, 62%)`);
+    g.addColorStop(1, `hsl(${hueB}, 85%, 62%)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  } else if (kind === "pattern") {
+    const baseHue = Math.random() * 360;
+    ctx.fillStyle = `hsl(${baseHue}, 70%, 88%)`;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = `hsl(${(baseHue + 180) % 360}, 70%, 58%)`;
+    const step = Math.max(40, Math.round(w / 7));
+    const r = step * 0.18;
+    for (let y = step / 2; y < h; y += step) {
+      for (let x = step / 2; x < w; x += step) {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  } else {
+    // Random rainbow patchwork.
+    const cols = 6;
+    const rows = Math.max(1, Math.round((cols * h) / w));
+    const cw = w / cols;
+    const ch = h / rows;
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++) {
+        ctx.fillStyle = `hsl(${Math.random() * 360}, 85%, 60%)`;
+        ctx.fillRect(i * cw, j * ch, cw + 1, ch + 1);
+      }
+    }
+  }
+}
+
+// The background is its own canvas layer below the drawing, so choosing a new
+// fill simply replaces it without touching the strokes on top.
+function fillBackground(kind: "pattern" | "gradient" | "rainbow") {
+  const ctx = getBgCtx();
+  const canvas = bgRef.value;
+  if (!ctx || !canvas) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  renderFill(ctx, canvas.width, canvas.height, kind);
+}
+
+function clearBackground() {
+  const ctx = getBgCtx();
+  const canvas = bgRef.value;
+  if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function exportImage(): string {
+  const main = canvasRef.value;
+  if (!main) return "";
+  const maxWidth = 800;
+  const scale = main.width > maxWidth ? maxWidth / main.width : 1;
+  const outW = Math.round(main.width * scale);
+  const outH = Math.round(main.height * scale);
+  const off = document.createElement("canvas");
+  off.width = outW;
+  off.height = outH;
+  const ctx = off.getContext("2d");
+  if (!ctx) return "";
+  // Solid base so transparent areas don't export as black in JPEG.
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, outW, outH);
+  if (bgRef.value) ctx.drawImage(bgRef.value, 0, 0, outW, outH);
+  ctx.drawImage(main, 0, 0, outW, outH);
+  return off.toDataURL("image/jpeg", 0.7);
 }
 
 function getOverlayPos(
@@ -123,6 +241,11 @@ function preventTouch(e: Event) {
 function onStart(e: MouseEvent | TouchEvent) {
   preventTouch(e);
   emit("manualstart");
+  if (stampEmoji.value) {
+    const pos = getCanvasPos(e);
+    if (pos) stamp(pos.x, pos.y, stampEmoji.value);
+    return;
+  }
   if (blinkMode.value) {
     const ctx = getOverlayCtx();
     const pos = getOverlayPos(e);
@@ -186,6 +309,7 @@ function setBlinkMode(enabled: boolean) {
 
 function clearAll() {
   clearOverlay();
+  clearBackground();
   clear();
 }
 
@@ -215,6 +339,7 @@ function snapshot(source: HTMLCanvasElement): HTMLCanvasElement | null {
 function fitCanvas() {
   const canvas = canvasRef.value;
   const overlay = overlayRef.value;
+  const bg = bgRef.value;
   if (!canvas) return;
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
@@ -225,6 +350,7 @@ function fitCanvas() {
 
   const mainSnap = snapshot(canvas);
   const overlaySnap = overlay ? snapshot(overlay) : null;
+  const bgSnap = bg ? snapshot(bg) : null;
 
   canvas.width = w;
   canvas.height = h;
@@ -245,6 +371,24 @@ function fitCanvas() {
         0,
         overlaySnap.width,
         overlaySnap.height,
+        0,
+        0,
+        w,
+        h,
+      );
+    }
+  }
+
+  if (bg) {
+    bg.width = w;
+    bg.height = h;
+    if (bgSnap) {
+      getBgCtx()?.drawImage(
+        bgSnap,
+        0,
+        0,
+        bgSnap.width,
+        bgSnap.height,
         0,
         0,
         w,
@@ -278,6 +422,7 @@ defineExpose({
   drawSnakePointer,
   clearSnakeOverlay,
   setSnakeActive,
+  setStamp,
   exportImage,
   setBackground,
   brushColor,

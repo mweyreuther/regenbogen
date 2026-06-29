@@ -26,6 +26,7 @@ export type CanvasRef = {
   drawSnakePointer: (x: number, y: number, radius: number) => void;
   clearSnakeOverlay: () => void;
   setSnakeActive: (active: boolean) => void;
+  setStamp: (emoji: string | null) => void;
 };
 
 // Index 0 is white in both palettes so the neon toggle never flips it away.
@@ -86,6 +87,8 @@ export interface ToolbarContext {
   isBlink: Ref<boolean>;
   isRainbow: Ref<boolean>;
   isSnake: Ref<boolean>;
+  isStamp: ComputedRef<boolean>;
+  selectedStamp: Ref<string | null>;
   eraserColor: ComputedRef<string>;
   toggleNeon: () => void;
   setColor: (color: string, event?: MouseEvent) => void;
@@ -94,6 +97,7 @@ export interface ToolbarContext {
   toggleBlink: () => void;
   toggleEraser: () => void;
   toggleSnake: () => void;
+  setStamp: (emoji: string) => void;
   undo: () => void;
   redo: () => void;
   clear: () => void;
@@ -123,6 +127,8 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
   const isEraser = ref(false);
   const isBlink = ref(false);
   const isRainbow = ref(false);
+  const selectedStamp = ref<string | null>(null);
+  const isStamp = computed(() => selectedStamp.value !== null);
   const previousColor = ref("#000000");
   const colorMode = useColorMode();
   const eraserColor = computed(() =>
@@ -146,6 +152,7 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
 
   function setColor(color: string, event?: MouseEvent) {
     playClick();
+    clearStamp();
     isEraser.value = false;
     if (isRainbow.value) {
       isRainbow.value = false;
@@ -188,6 +195,7 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
   }
 
   function toggleRainbow() {
+    clearStamp();
     disableEraser();
     isRainbow.value = !isRainbow.value;
     if (canvasComponent.value)
@@ -195,6 +203,7 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
   }
 
   function toggleBlink() {
+    clearStamp();
     disableEraser();
     isBlink.value = !isBlink.value;
     if (canvasComponent.value) {
@@ -204,6 +213,7 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
   }
 
   function toggleEraser() {
+    clearStamp();
     const wasOn = isEraser.value;
     if (!wasOn) {
       if (isRainbow.value) {
@@ -225,6 +235,18 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
     }
   }
 
+  function setStamp(emoji: string) {
+    disableEraser();
+    selectedStamp.value = emoji;
+    canvasComponent.value?.setStamp(emoji);
+  }
+
+  function clearStamp() {
+    if (selectedStamp.value === null) return;
+    selectedStamp.value = null;
+    canvasComponent.value?.setStamp(null);
+  }
+
   return {
     isNeon,
     colors,
@@ -240,5 +262,9 @@ export function useToolbar(canvasComponent: Ref<CanvasRef | null>) {
     toggleRainbow,
     toggleBlink,
     toggleEraser,
+    selectedStamp,
+    isStamp,
+    setStamp,
+    clearStamp,
   };
 }

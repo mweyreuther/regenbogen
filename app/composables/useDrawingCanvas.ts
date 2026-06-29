@@ -168,66 +168,6 @@ export function useDrawingCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
-  function fillBackground(kind: "pattern" | "gradient" | "rainbow") {
-    const ctx = getCtx();
-    const canvas = canvasRef.value;
-    if (!ctx || !canvas) return;
-    saveToHistory();
-    const w = canvas.width;
-    const h = canvas.height;
-
-    // Compose the fill on an offscreen canvas, then paint it behind the
-    // existing drawing with destination-over so strokes stay on top.
-    const off = document.createElement("canvas");
-    off.width = w;
-    off.height = h;
-    const octx = off.getContext("2d");
-    if (!octx) return;
-
-    if (kind === "gradient") {
-      const hueA = Math.random() * 360;
-      const hueB = (hueA + 90 + Math.random() * 180) % 360;
-      const g = octx.createLinearGradient(0, 0, w, h);
-      g.addColorStop(0, `hsl(${hueA}, 85%, 62%)`);
-      g.addColorStop(1, `hsl(${hueB}, 85%, 62%)`);
-      octx.fillStyle = g;
-      octx.fillRect(0, 0, w, h);
-    } else if (kind === "pattern") {
-      const baseHue = Math.random() * 360;
-      octx.fillStyle = `hsl(${baseHue}, 70%, 88%)`;
-      octx.fillRect(0, 0, w, h);
-      octx.fillStyle = `hsl(${(baseHue + 180) % 360}, 70%, 58%)`;
-      const step = Math.max(40, Math.round(w / 7));
-      const r = step * 0.18;
-      for (let y = step / 2; y < h; y += step) {
-        for (let x = step / 2; x < w; x += step) {
-          octx.beginPath();
-          octx.arc(x, y, r, 0, Math.PI * 2);
-          octx.fill();
-        }
-      }
-    } else {
-      // Random rainbow patchwork.
-      const cols = 6;
-      const rows = Math.max(1, Math.round((cols * h) / w));
-      const cw = w / cols;
-      const ch = h / rows;
-      for (let j = 0; j < rows; j++) {
-        for (let i = 0; i < cols; i++) {
-          octx.fillStyle = `hsl(${Math.random() * 360}, 85%, 60%)`;
-          octx.fillRect(i * cw, j * ch, cw + 1, ch + 1);
-        }
-      }
-    }
-
-    ctx.save();
-    ctx.globalCompositeOperation = "destination-over";
-    ctx.shadowColor = "transparent";
-    ctx.shadowBlur = 0;
-    ctx.drawImage(off, 0, 0);
-    ctx.restore();
-  }
-
   let snakeHue = 0;
 
   function drawSnakeSegment(
@@ -277,23 +217,22 @@ export function useDrawingCanvas() {
     }
   }
 
-  function exportImage(): string {
-    const canvas = canvasRef.value;
-    if (!canvas) return "";
-
-    const maxWidth = 800;
-    if (canvas.width <= maxWidth) {
-      return canvas.toDataURL("image/jpeg", 0.7);
-    }
-
-    const scale = maxWidth / canvas.width;
-    const offscreen = document.createElement("canvas");
-    offscreen.width = maxWidth;
-    offscreen.height = canvas.height * scale;
-    const ctx = offscreen.getContext("2d");
-    if (!ctx) return "";
-    ctx.drawImage(canvas, 0, 0, offscreen.width, offscreen.height);
-    return offscreen.toDataURL("image/jpeg", 0.7);
+  function stamp(x: number, y: number, emoji: string) {
+    const ctx = getCtx();
+    if (!ctx) return;
+    saveToHistory();
+    const size = Math.max(48, brushSize.value * 1.8);
+    const angle = ((Math.random() * 90 - 45) * Math.PI) / 180; // -45°..+45°
+    ctx.save();
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.font = `${size}px "Sour Gummy", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(emoji, 0, 0);
+    ctx.restore();
   }
 
   function setBackground(svgDataUrl: string, alpha = 0.15) {
@@ -327,11 +266,10 @@ export function useDrawingCanvas() {
     undo,
     redo,
     clear,
-    fillBackground,
     drawSnakeSegment,
     beginSnakeRun,
     endSnakeRun,
-    exportImage,
+    stamp,
     setBackground,
     strokePoints,
     clearStrokePoints,

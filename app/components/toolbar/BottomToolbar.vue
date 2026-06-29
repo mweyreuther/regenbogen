@@ -58,6 +58,17 @@
     </button>
 
     <button
+      :class="[
+        barButtonBase,
+        activePanel === 'stamp' || isStamp ? BAR_ACTIVE : BAR_INACTIVE,
+      ]"
+      @click="toggle('stamp')"
+    >
+      <UIcon name="i-lucide-sticker" class="size-7" />
+      <span>Stempel</span>
+    </button>
+
+    <button
       :class="[barButtonBase, barButtonState('more')]"
       @click="toggle('more')"
     >
@@ -88,12 +99,16 @@
     :open="activePanel === 'more'"
     @update:open="(v) => setOpen('more', v)"
   />
+  <ToolbarStampPanel
+    :open="activePanel === 'stamp'"
+    @update:open="(v) => setOpen('stamp', v)"
+  />
 </template>
 
 <script setup lang="ts">
 import { injectToolbar } from "~/composables/useToolbar";
 
-type Panel = "color" | "size" | "more";
+type Panel = "color" | "size" | "more" | "stamp";
 
 const {
   selectedColor,
@@ -102,6 +117,7 @@ const {
   redo,
   isSnake,
   toggleSnake,
+  isStamp,
   isUiHidden,
   showUi,
 } = injectToolbar();
@@ -120,10 +136,13 @@ function setOpen(panel: Panel, open: boolean) {
 const barButtonBase =
   "flex flex-1 flex-col items-center justify-center gap-1 rounded-xl py-2 text-xs font-semibold transition-colors";
 
+const BAR_ACTIVE =
+  "bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400";
+const BAR_INACTIVE =
+  "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50";
+
 function barButtonState(panel: Panel) {
-  return activePanel.value === panel
-    ? "bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"
-    : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700/50";
+  return activePanel.value === panel ? BAR_ACTIVE : BAR_INACTIVE;
 }
 
 const sizeDotStyle = computed(() => {
