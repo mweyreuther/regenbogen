@@ -18,6 +18,14 @@
     >
       <UIcon name="i-lucide-redo-2" class="size-6" />
     </button>
+    <button
+      v-if="isSnake"
+      aria-label="Schlange stoppen"
+      class="flex size-11 items-center justify-center rounded-full bg-sky-500/90 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-sky-500"
+      @click="toggleSnake()"
+    >
+      <UIcon name="i-lucide-spline" class="size-6" />
+    </button>
   </div>
 
   <!-- Bottom bar -->
@@ -87,8 +95,16 @@ import { injectToolbar } from "~/composables/useToolbar";
 
 type Panel = "color" | "size" | "more";
 
-const { selectedColor, selectedSize, undo, redo, isUiHidden, showUi } =
-  injectToolbar();
+const {
+  selectedColor,
+  selectedSize,
+  undo,
+  redo,
+  isSnake,
+  toggleSnake,
+  isUiHidden,
+  showUi,
+} = injectToolbar();
 
 const activePanel = ref<Panel | null>(null);
 

@@ -2,7 +2,10 @@ import type { Ref } from "vue";
 import type { CanvasRef } from "~/composables/useToolbar";
 
 const SPEED_CSS = 180; // css px per second
-const WANDER = 2.5; // heading drift in rad/s
+// A smoothly varying turn rate makes the path curve and deflect continuously
+// instead of running in long straight lines.
+const TURN_ACCEL = 9; // how fast the turn rate itself changes (rad/s^2)
+const MAX_TURN = 3.2; // cap on turn rate (rad/s) — higher = tighter curves
 
 /**
  * "Schlange" auto-draw mode: a pointer wanders the canvas at constant speed,
@@ -21,6 +24,7 @@ export function useSnake(canvasComponent: Ref<CanvasRef | null>) {
   let speed = 0;
   let radius = 10;
   let lineWidth = 12;
+  let turnRate = 0;
   let lastTime = 0;
 
   function tick(now: number) {
@@ -46,8 +50,12 @@ export function useSnake(canvasComponent: Ref<CanvasRef | null>) {
     const w = el.width;
     const h = el.height;
 
-    // Wander: nudge the heading, then re-derive velocity so speed stays constant.
-    angle += (Math.random() - 0.5) * WANDER * dt;
+    // Wander the heading via a random-walking (capped) turn rate, then re-derive
+    // velocity so speed stays constant. This yields smooth, curvy deflection.
+    turnRate += (Math.random() - 0.5) * TURN_ACCEL * dt;
+    if (turnRate > MAX_TURN) turnRate = MAX_TURN;
+    else if (turnRate < -MAX_TURN) turnRate = -MAX_TURN;
+    angle += turnRate * dt;
     let vx = Math.cos(angle) * speed;
     let vy = Math.sin(angle) * speed;
 
@@ -77,9 +85,10 @@ export function useSnake(canvasComponent: Ref<CanvasRef | null>) {
       bounced = true;
     }
     if (bounced) {
-      // Resync heading from the reflected velocity, plus a small random kick
-      // so the snake doesn't settle into a periodic loop.
-      angle = Math.atan2(vy, vx) + (Math.random() - 0.5) * 0.4;
+      // Resync heading from the reflected velocity, with a random kick and a
+      // fresh turn rate so it doesn't hug the wall or fall into a loop.
+      angle = Math.atan2(vy, vx) + (Math.random() - 0.5) * 0.6;
+      turnRate = (Math.random() - 0.5) * MAX_TURN;
     }
 
     canvas.drawSnakeSegment(prevX, prevY, x, y, lineWidth);
@@ -102,6 +111,7 @@ export function useSnake(canvasComponent: Ref<CanvasRef | null>) {
     x = el.width / 2;
     y = el.height / 2;
     angle = Math.random() * Math.PI * 2;
+    turnRate = (Math.random() - 0.5) * MAX_TURN;
     lastTime = 0;
 
     canvas.beginSnakeRun(); // single history snapshot → one undo step per run
